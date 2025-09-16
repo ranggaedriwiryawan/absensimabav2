@@ -1,0 +1,5 @@
+/* styles/style.css */
+html, body { height: 100%; }
+.wrap-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+table { border-collapse: separate; border-spacing: 0; }
+th, td { vertical-align: top; }

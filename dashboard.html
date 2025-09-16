@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard Admin | Absensi QR</title>
+  <link rel="stylesheet" href="styles/style.css"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+          integrity="sha512-YcsIP3vV0rKqQp7d/2h7eW1w2Cw7jvJF0vE0f3uF5r8l0wN8f3oKM3q1q9z8xgYbQm6O9s7b2m1rVw6b9A3R0Q=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <header class="bg-white border-b">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-gray-900"></div>
+        <h1 class="text-lg font-semibold">Dashboard Admin | Absensi QR</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="currentUser" class="text-sm text-gray-600"></span>
+        <button type="button" data-logout class="px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <section>
+      <h2 class="text-base font-semibold mb-2">Upload / Refresh Excel (Sheet: <b>DATA MABA</b>)</h2>
+      <div class="flex items-center gap-3 flex-wrap">
+        <input id="excelFileInput" type="file" accept=".xlsx,.xls" class="block" />
+        <button id="generateQrBtn" class="px-3 py-2 rounded-md bg-gray-900 text-white text-sm">Generate QR untuk yang kosong</button>
+        <button id="exportCsvBtn" class="px-3 py-2 rounded-md bg-gray-900 text-white text-sm">Export CSV</button>
+        <button id="exportPdfBtn" class="px-3 py-2 rounded-md bg-gray-900 text-white text-sm">Export PDF</button>
+        <button id="resetDbBtn" class="px-3 py-2 rounded-md bg-red-600 text-white text-sm">Reset DB</button>
+      </div>
+      <div class="text-sm text-gray-600 mt-2 space-y-1">
+        <p id="excelSummary">Belum ada data master yang diunggah.</p>
+        <p>Missing QR: <b id="missingQrCount">0</b> • Duplicate QR (dalam file upload): <b id="dupQrCount">0</b></p>
+      </div>
+    </section>
+
+    <section class="bg-white p-4 rounded-xl shadow">
+      <h3 class="text-sm font-semibold mb-3">Filter</h3>
+      <div class="grid md:grid-cols-4 gap-3">
+        <select id="filterProdi" class="border rounded-md px-3 py-2">
+          <option value="">Semua Prodi</option>
+        </select>
+        <select id="filterRiwayat" class="border rounded-md px-3 py-2">
+          <option value="">Riwayat/Alergi (Semua)</option>
+          <option value="Ada">Ada</option>
+          <option value="Tidak">Tidak</option>
+        </select>
+        <input id="searchInput" class="border rounded-md px-3 py-2" placeholder="Cari Nama/Alamat/Hobi/Motto..." />
+        <div class="text-sm text-gray-500 flex items-center">Gunakan filter & pencarian untuk menyaring tabel di bawah.</div>
+      </div>
+    </section>
+
+    <section class="grid md:grid-cols-3 gap-4">
+      <div class="p-4 bg-white rounded-xl shadow">
+        <div class="text-sm text-gray-500">Total Hadir (Pagi/Sore Hari Ini)</div>
+        <div id="todayTotals" class="text-2xl font-bold mt-1">0 / 0</div>
+      </div>
+      <div class="p-4 bg-white rounded-xl shadow">
+        <div class="text-sm text-gray-500">Unique Attendees (Kumulatif)</div>
+        <div id="uniqueTotals" class="text-2xl font-bold mt-1">0</div>
+      </div>
+      <div class="p-4 bg-white rounded-xl shadow">
+        <div class="text-sm text-gray-500">Keterangan</div>
+        <div class="text-sm mt-1">Tabel di bawah memuat <b>semua kolom</b> dari hasil scan (snapshot) + metadata.</div>
+      </div>
+    </section>
+
+    <section id="logsTableWrapper" class="bg-white rounded-xl shadow p-3 overflow-auto">
+      <table id="logsTable" class="min-w-full text-sm">
+        <thead class="bg-gray-50 text-left">
+          <tr>
+            <th class="p-2">NAMA</th>
+            <th class="p-2">PROGRAM STUDI</th>
+            <th class="p-2">Alamat</th>
+            <th class="p-2">Tempat/Tanggal Lahir (Usia)</th>
+            <th class="p-2">Hobi</th>
+            <th class="p-2">Motto Hidup</th>
+            <th class="p-2">Riwayat/Alergi</th>
+            <th class="p-2">QR CODE</th>
+            <th class="p-2">Waktu (WIB)</th>
+            <th class="p-2">Slot</th>
+            <th class="p-2">Di Luar Jadwal</th>
+            <th class="p-2">Petugas</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/excel.js"></script>
+  <script src="js/dashboard.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded',()=>{
+      guardAdmin(); bindLogout();
+      try{ const u=JSON.parse(sessionStorage.getItem('user')||'null'); if(u?.username) document.getElementById('currentUser').textContent=`Logged in as: ${u.username}`; }catch(_){}
+    });
+  </script>
+</body>
+</html>

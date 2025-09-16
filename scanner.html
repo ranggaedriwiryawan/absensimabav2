@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Scanner | Absensi QR</title>
+  <link rel="stylesheet" href="styles/style.css"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>#qr-reader{width:100%;max-width:420px;margin:0 auto;}</style>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <header class="bg-white border-b">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <h1 class="text-lg font-semibold">Scan QR | Absensi</h1>
+      <button type="button" data-logout class="px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm">Logout</button>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-6">
+    <p class="text-sm text-gray-600 mb-2">Gunakan kamera (HTTPS wajib) atau unggah gambar QR (JPG/PNG).</p>
+    <div id="secureWarning" class="hidden mt-2 text-amber-700 text-sm">⚠️ Buka situs via <b>HTTPS</b> agar kamera bisa digunakan.</div>
+
+    <div id="qr-reader" class="rounded-xl bg-white p-3 shadow"></div>
+    <div id="scan-status" class="mt-3 text-sm text-gray-700"></div>
+
+    <div id="scan-card" class="mt-4 hidden">
+      <div id="scan-toast" class="p-3 rounded-md text-sm"></div>
+      <div id="scan-detail" class="mt-3 text-sm bg-white rounded-xl p-3 shadow"></div>
+    </div>
+  </main>
+
+  <!-- libs -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <!-- your scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/excel.js"></script>
+  <script src="js/scanner.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      guardAny(); bindLogout();
+      if(!window.isSecureContext) document.getElementById('secureWarning')?.classList.remove('hidden');
+
+      // NEW: autoload master on scanner too (so pendamping doesn't need to open dashboard first)
+      try {
+        if (typeof ExcelHelper?.autoLoadDefaultFromRootIfEmpty === 'function') {
+          await ExcelHelper.autoLoadDefaultFromRootIfEmpty();
+        }
+      } catch(e){ console.warn('autoload on scanner failed', e); }
+
+      initQrScanner({ elementId:'qr-reader', statusId:'scan-status', toastId:'scan-toast', cardId:'scan-card', detailId:'scan-detail' });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Login | Absensi QR</title>
+  <link rel="stylesheet" href="styles/style.css"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <main class="min-h-screen flex items-center justify-center p-4">
+    <form id="loginForm" class="w-full max-w-sm bg-white shadow rounded-xl p-6">
+      <h1 class="text-lg font-semibold mb-4">Login</h1>
+      <label class="block text-sm mb-1">Username</label>
+      <input id="username" class="w-full mb-3 border rounded-md px-3 py-2" placeholder="admin / pendamping01" required />
+      <label class="block text-sm mb-1">Password</label>
+      <input id="password" type="password" class="w-full mb-3 border rounded-md px-3 py-2" placeholder="admin123 / 123456" required />
+      <button type="submit" class="w-full bg-gray-900 text-white rounded-md py-2">Sign in</button>
+      <p id="loginError" class="text-red-600 mt-2 hidden"></p>
+      <p class="text-xs text-gray-500 mt-3">Admin → dashboard • Pendamping → scanner</p>
+    </form>
+  </main>
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
