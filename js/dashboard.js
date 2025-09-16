@@ -3,9 +3,9 @@
   function renderTable(logs){
     const tbody = document.querySelector('#logsTable tbody');
     if(!tbody) return;
-    tbody.innerHTML='';
+    tbody.innerHTML = '';
     logs.forEach(l=>{
-      const tr=document.createElement('tr');
+      const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="p-2 align-top wrap-anywhere">${l.nama}</td>
         <td class="p-2 align-top wrap-anywhere">${l.prodi}</td>
@@ -16,7 +16,7 @@
         <td class="p-2 align-top wrap-anywhere">${l.riwayat}</td>
         <td class="p-2 align-top wrap-anywhere">${l.qr}</td>
         <td class="p-2 align-top">${l.tanggal} ${l.timeWIB}</td>
-        <td class="p-2 align-top">${l.slot.toUpperCase()}</td>
+        <td class="p-2 align-top">${l.slot?.toUpperCase?.()||l.slot}</td>
         <td class="p-2 align-top">${l.outOfWindow?'Ya':'Tidak'}</td>
         <td class="p-2 align-top">${l.byUser}</td>
       `;
@@ -25,63 +25,59 @@
   }
 
   function buildFilters(master){
-    const set=new Set(master.map(m=>m.prodi).filter(Boolean));
-    const sel=document.getElementById('filterProdi');
-    if(sel){
-      sel.innerHTML = `<option value="">Semua Prodi</option>` + Array.from(set).sort().map(p=>`<option>${p}</option>`).join('');
-    }
+    const prodis = Array.from(new Set(master.map(m => m.prodi).filter(Boolean))).sort();
+    const sel = document.getElementById('filterProdi');
+    if (sel) sel.innerHTML = `<option value="">Semua Prodi</option>` + prodis.map(p => `<option>${p}</option>`).join('');
   }
 
   function applyFilters(source){
     const prodi = (document.getElementById('filterProdi')?.value || '').trim();
-    const rStatus = (document.getElementById('filterRiwayat')?.value || '').trim();
-    const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const rStat = (document.getElementById('filterRiwayat')?.value || '').trim(); // Ada/Tidak
+    const q     = (document.getElementById('searchInput')?.value || '').toLowerCase();
 
     return source.filter(l=>{
-      if(prodi && l.prodi !== prodi) return false;
-      if(rStatus){
-        const has = ((l.riwayat||'').trim() && (l.riwayat||'').trim() !== '-' && (l.riwayat||'').trim().toLowerCase()!=='tidak') ? 'Ada' : 'Tidak';
-        if(has !== rStatus) return false;
+      if (prodi && l.prodi !== prodi) return false;
+
+      if (rStat) {
+        const has = ((l.riwayat||'').trim() && (l.riwayat||'').trim() !== '-' && (l.riwayat||'').trim().toLowerCase() !== 'tidak') ? 'Ada' : 'Tidak';
+        if (has !== rStat) return false;
       }
-      if(q){
-        const hay = [l.nama, l.alamat, l.hobi, l.motto].join(' ').toLowerCase();
-        if(!hay.includes(q)) return false;
+
+      if (q) {
+        const hay = [l.nama,l.alamat,l.hobi,l.motto].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
       }
       return true;
     });
   }
 
-  async function refreshStatsAndTable(){
+  async function refreshUI(){
+    // stats
     const logs = await DB.listLogs();
-
     const today = Utils.todayWIB();
-    let pagi=0, sore=0, uniq=new Set();
-    logs.forEach(l=>{ uniq.add(l.qr); if(l.tanggal===today){ if(l.slot==='pagi') pagi++; if(l.slot==='sore') sore++; }});
-    const mToday=document.getElementById('todayTotals'); if(mToday) mToday.textContent=`${pagi} / ${sore}`;
-    const mUnique=document.getElementById('uniqueTotals'); if(mUnique) mUnique.textContent=String(uniq.size);
+    let pagi=0, sore=0; const uniq = new Set();
+    logs.forEach(l => {
+      uniq.add(l.qr);
+      if (l.tanggal === today) {
+        if (l.slot === 'pagi') pagi++;
+        else if (l.slot === 'sore') sore++;
+      }
+    });
+    const tt = document.getElementById('todayTotals');  if (tt) tt.textContent = `${pagi} / ${sore}`;
+    const ut = document.getElementById('uniqueTotals'); if (ut) ut.textContent = String(uniq.size);
 
+    // table
     const filtered = applyFilters(logs);
     renderTable(filtered);
   }
 
-  async function onExcelFileChange(file){
-    const summary=document.getElementById('excelSummary');
-    const missingEl=document.getElementById('missingQrCount');
-    const dupEl=document.getElementById('dupQrCount');
-
-    const { rows } = await ExcelHelper.handleExcelUpload(file, summary, missingEl, dupEl);
+  async function handleExcel(file){
+    const summary = document.getElementById('excelSummary');
+    const missing = document.getElementById('missingQrCount');
+    const dups    = document.getElementById('dupQrCount');
+    const { rows } = await ExcelHelper.handleExcelUpload(file, summary, missing, dups);
     buildFilters(rows);
-    await refreshStatsAndTable();
-  }
-
-  async function generateQRForMissing(){
-    const master=await DB.listMaster();
-    const { master:updated, changed, duplicates } = await ExcelHelper.generateMissingQR(master);
-    if(changed>0) await DB.saveMaster(updated);
-    alert(`Generated ${changed} QR untuk baris tanpa QR.`);
-    const missingEl=document.getElementById('missingQrCount'); if(missingEl) missingEl.textContent = String(updated.filter(r=>!r.qr).length);
-    const dupEl=document.getElementById('dupQrCount'); if(dupEl) dupEl.textContent = String(duplicates.length);
-    buildFilters(updated);
+    await refreshUI();
   }
 
   async function exportCSV(){
@@ -91,7 +87,7 @@
       'Tempat/Tanggal Lahir': `${l.tempatLahir}, ${l.tglLahirTanggal}`, 'Usia': l.usia,
       'Hobi': l.hobi, 'Motto Hidup': l.motto, 'Riwayat/Alergi': l.riwayat,
       'QR CODE': l.qr, 'Tanggal (WIB)': l.tanggal, 'Waktu (WIB)': l.timeWIB,
-      'Slot': l.slot.toUpperCase(), 'Di Luar Jadwal': l.outOfWindow ? 'Ya':'Tidak',
+      'Slot': l.slot?.toUpperCase?.() || l.slot, 'Di Luar Jadwal': l.outOfWindow?'Ya':'Tidak',
       'Petugas': l.byUser
     }));
     const csv = Utils.csvFromArray(rows);
@@ -112,40 +108,50 @@
   }
 
   function wireUI(){
-    const f=document.getElementById('excelFileInput');
-    if(f) f.addEventListener('change', async e=>{ const file=e.target.files?.[0]; if(file) await onExcelFileChange(file); });
-
-    const gen=document.getElementById('generateQrBtn'); if(gen) gen.addEventListener('click', generateQRForMissing);
-    const exp=document.getElementById('exportCsvBtn');  if(exp) exp.addEventListener('click', exportCSV);
-    const pdf=document.getElementById('exportPdfBtn');  if(pdf) pdf.addEventListener('click', exportPDF);
-
-    const reset=document.getElementById('resetDbBtn');
-    if (reset) reset.addEventListener('click', async ()=>{
-      if (confirm('Hapus semua master dan log di IndexedDB?')) {
+    document.getElementById('excelFileInput')?.addEventListener('change', async e=>{
+      const f = e.target.files?.[0]; if (f) await handleExcel(f);
+    });
+    document.getElementById('generateQrBtn')?.addEventListener('click', async ()=>{
+      const master = await DB.listMaster();
+      let changed=0; const seen = new Set();
+      for(const r of master){
+        if(!r.qr){
+          const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+          let s='MABA-'; for(let i=0;i<10;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+          r.qr = s; changed++;
+        }
+        if(seen.has(r.qr)) r._dup = true; else { seen.add(r.qr); r._dup = false; }
+      }
+      if (changed>0) await DB.saveMaster(master);
+      alert(`Generated ${changed} QR untuk baris tanpa QR.`);
+      document.getElementById('missingQrCount')?.textContent = String(master.filter(r=>!r.qr).length);
+      document.getElementById('dupQrCount')?.textContent     = String(master.filter(r=>r._dup).length);
+      buildFilters(master);
+    });
+    document.getElementById('exportCsvBtn')?.addEventListener('click', exportCSV);
+    document.getElementById('exportPdfBtn')?.addEventListener('click', exportPDF);
+    document.getElementById('resetDbBtn')?.addEventListener('click', async ()=>{
+      if (confirm('Hapus semua master & log?')) {
         await DB.clearAll();
-        alert('DB sudah direset. Silakan upload Excel lagi atau gunakan autoload.');
-        await refreshStatsAndTable();
+        alert('DB sudah direset. Upload Excel lagi atau gunakan autoload.');
+        await refreshUI();
       }
     });
 
     ['filterProdi','filterRiwayat','searchInput'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el) el.addEventListener('input', refreshStatsAndTable);
+      document.getElementById(id)?.addEventListener('input', refreshUI);
     });
   }
 
   document.addEventListener('DOMContentLoaded', async ()=>{
-    guardAdmin(); bindLogout();
-    wireUI();
+    guardAdmin(); bindLogout(); wireUI();
 
-    if (typeof ExcelHelper.autoLoadDefaultFromRootIfEmpty === 'function') {
-      const loaded = await ExcelHelper.autoLoadDefaultFromRootIfEmpty();
-      if (loaded) {
-        buildFilters(await DB.listMaster());
-      }
+    // Autoload master on first visit (DATA MABA.xlsx at site root)
+    if (typeof ExcelHelper?.autoLoadDefaultFromRootIfEmpty === 'function') {
+      await ExcelHelper.autoLoadDefaultFromRootIfEmpty();
     }
 
     buildFilters(await DB.listMaster());
-    await refreshStatsAndTable();
+    await refreshUI();
   });
 })();
